@@ -7,10 +7,10 @@ import heapq
 import time
 
 #Variables that contains the user credentials to access Twitter API
-access_token = "jWwEIoB8RqRXn6FSBPyQkMAyz"
-access_token_secret = "6Hl4AC7KRktyjZSFmGClI8rMztBEbZSiDdJfJgQYsDPOAWSrXF"
-consumer_key = "478337335-34ls4LJEllGMlQnd6UsS1UFOwxG2H5smbOKSuyOF"
-consumer_secret = "BI1b8x4n1acXALRjGlmtAv1cXEvuVuF7r46jmHzG4eMH2"
+access_token = "29463499-9Og6hxW4HqFxcQyIrAdmLpbAnrwIk290ghOE0ez5f"
+access_token_secret = "elXVYJRFmFFit3PiVTmI9eU0IvHqqD7H4yeEmClJ8c"
+consumer_key = "8AqQCy7umStCyNN356v7fw"
+consumer_secret = "vOvKV1QwuS1AeKPMIvJqErBxW7i1N12OL4UY2tNMs0c"
 
 top_x_results = 10
 
@@ -31,8 +31,8 @@ class retweeted():
         return len(self.retweet_times)
     
     def refresh_time_window(self, n):
-        current_time = time.mktime(time.gmtime())
-        time_window = current_time - n * 60
+        current_time = time.mktime(time.gmtime()) - 3600
+        time_window = current_time - (n * 60)
         for t in self.retweet_times:
             # remove all retweets beyond n-minutes in the past
             if t < time_window:
@@ -51,22 +51,24 @@ class retweetListener(StreamListener):
         self.n = n_minute_window
 
     def on_data(self, data):
-        tweet = json.loads(data)
-        ret = tweet['retweeted_status']
+        tweet = json.loads(str(data))
 
-        if ret:
-            retweet_time = time.mktime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
+        if 'retweeted_status' in tweet:
+            ret = tweet['retweeted_status']
+            t = time.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y')
+            retweet_time = time.mktime(t)
             retweeted_id = ret['id']
 
             if not (retweeted_id in self.retweeteds.keys()):
                 retweet_text = ret['text']
-                r = retweeted(retweet_text, retweet_time, self.n)
+                r = retweeted(retweet_time, retweet_text)
                 self.retweeteds[retweeted_id] = r
             else:
                 self.retweeteds[retweeted_id].add_retweet_time(retweet_time)
 
-        self.refresh()
-        self.print_top()
+            self.refresh()
+            self.print_top()
+
         return True
 
     def on_error(self, status):
@@ -79,16 +81,17 @@ class retweetListener(StreamListener):
                 del self.retweeteds[id]
 
     def print_top(self):
-        top = heapq.nlargest(top_x_results, self.retweeteds, key = lambda k: self.retweeteds[k].get_num_retweets())
-        for i in range(len(top)):
-            retweeted = top[i]
+        top_ids = heapq.nlargest(top_x_results, self.retweeteds, key = lambda k: self.retweeteds[k].get_num_retweets())
+        for i in range(len(top_ids)):
+            retweeted = self.retweeteds[top_ids[i]]
             print str(i) + ". " + retweeted.get_text() + ": " + str(retweeted.get_num_retweets())
         print "\n"
 
 
 if __name__ == '__main__':
 
-    n = raw_input('Enter the time window n (in minutes): ')
+    n = int(raw_input('Enter the time window n (in minutes): '))
+    n = 10
 
     #Handles Twitter authentication and connection to Twitter Streaming API
     l = retweetListener(n)
