@@ -91,7 +91,6 @@ class retweetListener(StreamListener):
 if __name__ == '__main__':
 
     n = int(raw_input('Enter the time window n (in minutes): '))
-    n = 10
 
     #Handles Twitter authentication and connection to Twitter Streaming API
     l = retweetListener(n)
